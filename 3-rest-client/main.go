@@ -4,25 +4,35 @@ import (
   "net/http"
   "fmt"
   "encoding/json"
+  "strconv"
 )
 
 func main () {
+  movieid := "0372785"
+  url := "http://www.omdbapi.com/?i=tt" + movieid + "&plot=short&r=json"
+  resp, err := http.Get(url)
+  if err != nil {
+    fmt.Println("Error in file retrieval %v", err)
+  }
 
-resp, err := http.Get("http://www.omdbapi.com/?i=tt0372784&plot=short&r=json")
-if err != nil {
-  fmt.Println("Error in file retrieval %v", err)
-	// handle error
-}
 defer resp.Body.Close()
+
 var m Movie
-
-mydecoder :=json.NewDecoder(resp.Body)
-
-if err := mydecoder.Decode(&m); err!=nil{
-fmt.Errorf("error parsing body %v", err)
-return }
-fmt.Printf("%#v",m.Actors)
-
+if err := json.NewDecoder(resp.Body).Decode(&m); err!=nil{
+  fmt.Errorf("error parsing body %v", err)
+  return }
 
 fmt.Println("status code is", resp.Status)
+
+if m.ImdbRating == "N/A"{
+  fmt.Printf("The movie : %#s was released in %#s - the IMDB rating is %#s with %#s votes\n", m.Title, m.Year, m.ImdbRating, m.ImdbVotes)
+} else {
+  ratingFloat, err := strconv.ParseFloat(m.ImdbRating, 64)
+  ratingInt := int(ratingFloat * 10)
+  if err != nil {
+    fmt.Println("error", err)
+    return
+}
+  fmt.Printf("The movie : %#s was released in %#s - the IMDB rating is %#d%% with %#s votes\n", m.Title, m.Year, ratingInt, m.ImdbVotes)
+  }
 }
